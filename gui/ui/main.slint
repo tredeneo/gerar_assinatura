@@ -1,0 +1,57 @@
+import { AboutSlint, Button, VerticalBox, LineEdit, StandardListView, StandardTableView } from "std-widgets.slint";
+export global User {
+    in property <string> actual_id;
+    in-out property <[[StandardListViewItem]]> users;
+    
+}
+
+export component Demo inherits Window {
+    in-out property <string> nome: "sla";
+    in-out property <string> input;
+    private property <bool> enable:false;
+    preferred-width: 1280px;
+    preferred-height: 720px;
+    callback change_name();
+    callback download();
+    callback outlook();
+    VerticalBox {
+        alignment: start;
+
+        HorizontalLayout {
+            Button {
+                enabled: root.enable;
+                text: "salvar imagem nos downloads";
+                clicked => {
+                    root.download()
+                }
+            }
+
+            Button {
+                enabled: root.enable;
+                text: "aplicar assinatura no outlook";
+                clicked => {
+                    root.outlook()
+                }
+            }
+        }
+
+        LineEdit {
+            placeholder-text: "Escreva e nome para pesquisar";
+            edited => {
+                root.input = self.text;
+            }
+            accepted => {
+                root.change_name()
+            }
+        }
+
+        StandardTableView {
+            columns:[ {title:"nome"},{title:"setor"},{title:"email"},{title:"id"}];
+            rows: User.users;
+            current-row-changed(index) => {
+                root.enable=true;
+                User.actual_id= User.users[index][3].text
+            }
+        }
+    }
+}
