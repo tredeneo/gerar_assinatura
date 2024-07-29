@@ -15,6 +15,7 @@ pub const SELECT_USERS: &str = r#"
 			join departments
 			on departments.id = users.department
             where users.name like ?1
+            order by users.name
 "#;
 #[derive(Debug, FromRow, Clone)]
 pub struct Funcionario {

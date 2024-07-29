@@ -1,11 +1,11 @@
+use ab_glyph::{self, FontVec, PxScale};
 use base64::Engine;
-use image::{open, DynamicImage, ImageBuffer, Rgba};
+use image::{open, DynamicImage, ImageBuffer, Rgb, RgbImage};
 use imageproc::drawing::draw_text;
 use regex::Regex;
-use rusttype::{Font, Scale};
 use std::fs;
 use std::fs::File;
-use std::io::{Read, Write};
+use std::io::Read;
 use std::ops::Not;
 use std::path::Path;
 
@@ -38,15 +38,16 @@ impl User {
     }
 }
 
-const AZUL_ESCURINHO: Rgba<u8> = Rgba([23u8, 34u8, 82u8, 1u8]);
+const AZUL_ESCURINHO: Rgb<u8> = Rgb([23u8, 34u8, 82u8]);
 const INICIO_ESCRITA_W: i32 = 240;
-const VERDE_CLARINHO: Rgba<u8> = Rgba([29u8, 35u8, 65u8, 1u8]);
+const VERDE_CLARINHO: Rgb<u8> = Rgb([29u8, 35u8, 65u8]);
 
 const IMAGEM_BASE_DIRETORIO: &str = "\\\\srv1-ibl02\\Wallpaper\\assinatura_base.png";
+// const IMAGEM_BASE_DIRETORIO: &str = "Imagem1.png";
 const TAMANHO_FONTE: u32 = 16;
 pub struct Assinatura {
-    img: ImageBuffer<Rgba<u8>, Vec<u8>>,
-    font: Font<'static>,
+    img: RgbImage,
+    font: FontVec,
     signature_name: String,
     signature_number: String,
 }
@@ -54,10 +55,16 @@ pub struct Assinatura {
 impl Assinatura {
     fn new() -> Self {
         let path = Path::new(&IMAGEM_BASE_DIRETORIO);
-        let img = open(path).expect("deu ruim").into_rgba8();
+        let img = open(path)
+            .inspect_err(|f| {
+                dbg!(f);
+            })
+            .unwrap()
+            .into_rgb8();
+
         // let font = Vec::from(include_bytes!("../asset/Carlito-Bold.ttf") as &[u8]);
         let font = Vec::from(include_bytes!("../asset/LiberationSans-Bold.ttf") as &[u8]);
-        let font = Font::try_from_vec(font).unwrap();
+        let font = FontVec::try_from_vec(font).unwrap();
         Self {
             img,
             font,
@@ -66,10 +73,9 @@ impl Assinatura {
         }
     }
 
-    fn carregar_font(&self) -> Font<'static> {
-        // let font = Vec::from(include_bytes!((ACTUAL_FONT as &[u8])));
+    fn carregar_font(&self) -> FontVec {
         let font = Vec::from(include_bytes!("../asset/LiberationSans-Regular.ttf") as &[u8]);
-        Font::try_from_vec(font).unwrap()
+        FontVec::try_from_vec(font).unwrap()
     }
     fn escrever_email(&mut self, texto: &str) {
         self.signature_name = texto.split_once('@').unwrap_or_default().0.to_string();
@@ -86,9 +92,9 @@ impl Assinatura {
     }
 
     fn diminuir_imagem(&mut self, width: u32, height: u32) {
-        self.img = DynamicImage::ImageRgba8(self.img.clone())
-            .thumbnail(width, height)
-            .to_rgba8();
+        self.img = DynamicImage::ImageRgb8(self.img.clone())
+            .resize(width, height, image::imageops::FilterType::Lanczos3)
+            .to_rgb8();
 
         let nova_altura = self.img.height() + 15; // Ajuste conforme necessário
 
@@ -96,12 +102,13 @@ impl Assinatura {
             if y < self.img.height() {
                 *self.img.get_pixel(x, y)
             } else {
-                Rgba([255, 255, 255, 0]) // Fundo branco para o espaço do texto
+                Rgb([255, 255, 255]) // Fundo branco para o espaço do texto
             }
         });
 
         self.img = nova_img;
     }
+
     fn escrever_nome(&mut self, texto: &str) {
         self.img = draw_text(
             &self.img,
@@ -122,13 +129,12 @@ impl Assinatura {
             33,
             self.font_scaling(TAMANHO_FONTE - 2),
             &self.carregar_font(),
-            // &self.font,
             texto.to_uppercase().as_str(),
         );
     }
 
-    fn font_scaling(&self, height: u32) -> Scale {
-        Scale {
+    fn font_scaling(&self, height: u32) -> PxScale {
+        PxScale {
             x: height as f32,
             y: height as f32,
         }
@@ -192,7 +198,7 @@ impl Assinatura {
         );
     }
 
-    pub fn gerar_imagem_outlook(user: User) {
+    pub fn gerar_imagem_base64(user: User) -> String {
         let h = 200;
         let w = 700;
         let mut ass = Assinatura::new();
@@ -204,7 +210,7 @@ impl Assinatura {
         ass.escrever_celular(&user.celular);
         ass.escrever_mensagem();
         ass.escrever_site();
-        ass.escrever_html();
+        ass.escrever_html()
     }
     pub fn gerar_imagem_downloads(user: User) {
         let h = 200;
@@ -222,14 +228,11 @@ impl Assinatura {
     }
     fn salvar_imagem(&self, name: &str) {
         let mut path_download_image = dirs::download_dir().unwrap_or_default();
-        path_download_image.push(format!("{}.jpg", name));
+        path_download_image.push(format!("{}.png", name));
 
         let _ = self.img.save(path_download_image);
-        // let _ = self
-        //     .img
-        //     .save_with_format(path_download_image, image::ImageFormat::Jpeg);
     }
-    fn escrever_html(&self) {
+    fn escrever_html(&self) -> String {
         let mut path_img = dirs::config_dir().unwrap();
         path_img.push(Path::new("Microsoft"));
         path_img.push(Path::new("Signatures"));
@@ -244,39 +247,38 @@ impl Assinatura {
         let mut buffer = Vec::new();
         let _ = File::read_to_end(&mut arquivo, &mut buffer).unwrap();
         let img_base64 = base64::engine::general_purpose::STANDARD.encode(buffer);
+        img_base64
+        // let html = maud::html! {
+        //     body{
+        //         // div.container
+        //         // {
 
-        let html = maud::html! {
-            body{
-                // div.container
-                // {
+        //             a href={"https://api.whatsapp.com/send?phone=55"(self.signature_number.replace(" ","").replace("-",""))};
 
-                    a href={"https://api.whatsapp.com/send?phone=55"(self.signature_number.replace(" ","").replace("-",""))};
+        //             img src={"data:image/jpg;base64," (&img_base64)};
+        //         // };
+        //         }
+        // };
+        // let html = html.into_string();
 
+        // let mut file = match File::create(&path_html) {
+        //     Ok(file) => {
+        //         log::info!("arquivo criado");
+        //         log::debug!("{:?}", &path_html);
+        //         file
+        //     }
+        //     Err(err) => {
+        //         log::error!("Erro ao criar o arquivo: {}\n{}", err, &path_html.display());
+        //         return String::new();
+        //     }
+        // };
 
-                    img src={"data:image/jpg;base64," (img_base64)};
-                // };
-                }
-        };
-        let html = html.into_string();
-
-        let mut file = match File::create(&path_html) {
-            Ok(file) => {
-                log::info!("arquivo criado");
-                log::debug!("{:?}", &path_html);
-                file
-            }
-            Err(err) => {
-                log::error!("Erro ao criar o arquivo: {}\n{}", err, &path_html.display());
-                return;
-            }
-        };
-
-        match file.write_all(html.as_bytes()) {
-            Ok(_) => println!(
-                "HTML salvo com sucesso em {}",
-                path_html.to_str().unwrap_or_default()
-            ),
-            Err(err) => log::error!("Erro ao escrever o HTML no arquivo: {}", err),
-        }
+        // match file.write_all(html.as_bytes()) {
+        //     Ok(_) => println!(
+        //         "HTML salvo com sucesso em {}",
+        //         path_html.to_str().unwrap_or_default()
+        //     ),
+        //     Err(err) => log::error!("Erro ao escrever o HTML no arquivo: {}", err),
+        // }
     }
 }
