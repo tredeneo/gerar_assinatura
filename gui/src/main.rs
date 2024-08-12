@@ -1,4 +1,8 @@
-// #![windows_subsystem = "windows"]
+#![cfg_attr(
+    all(target_os = "windows", build_release),
+    windows_subsystem = "windows"
+)]
+
 use std::{fs::File, path::Path};
 
 slint::include_modules!();
@@ -68,17 +72,18 @@ async fn main() {
                 name = std::format!("{} {}", login[0], login[1]);
             }
             let teste = escrever_em_imagem::User::new(
-                &name,
+                name.trim(),
                 &data.email,
                 "41 3084-8900",
                 &data.department,
                 &data.phone_number,
                 &data.extension,
             );
+            dbg!(&teste);
             escrever_em_imagem::Assinatura::gerar_imagem_downloads(teste);
         });
     });
-    let ui = app.as_weak();
+    let _ui = app.as_weak();
     // app.on_outlook(move || {
     //     let my_ui = ui.unwrap();
     //     let _ = slint::spawn_local(async move {

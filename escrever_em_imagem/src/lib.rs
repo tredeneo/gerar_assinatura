@@ -9,6 +9,7 @@ use std::io::Read;
 use std::ops::Not;
 use std::path::Path;
 
+#[derive(Debug, Clone)]
 pub struct User {
     name: String,
     email: String,
@@ -229,6 +230,7 @@ impl Assinatura {
     fn salvar_imagem(&self, name: &str) {
         let mut path_download_image = dirs::download_dir().unwrap_or_default();
         path_download_image.push(format!("{}.png", name));
+        dbg!(&path_download_image);
 
         let _ = self.img.save(path_download_image);
     }
