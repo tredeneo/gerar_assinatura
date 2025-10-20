@@ -40,7 +40,7 @@ impl User {
 }
 
 const AZUL_ESCURINHO: Rgb<u8> = Rgb([23u8, 34u8, 82u8]);
-const INICIO_ESCRITA_W: i32 = 240;
+const INICIO_ESCRITA_W: i32 = 220;
 const VERDE_CLARINHO: Rgb<u8> = Rgb([29u8, 35u8, 65u8]);
 
 const IMAGEM_BASE_DIRETORIO: &str = "\\\\srv1-ibl02\\Wallpaper\\assinatura_base.png";
@@ -158,7 +158,7 @@ impl Assinatura {
         let mut tmp = texto.to_string();
 
         if ramal.is_empty().not() {
-            tmp = format!("{}   -   Ramal {}", texto, ramal);
+            tmp = format!("{} - Ramal {}", texto, ramal);
         }
         self.img = draw_text(
             &self.img,

@@ -9,6 +9,7 @@ use lettre::{
 
 use rpassword::read_password;
 use std::io::{self, Write};
+use std::ops::Not;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -46,18 +47,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             &user.extension,
         );
 
-        if "paulo.yure".contains(&user.login) {
-            println!("pulado paulo yure");
-            continue;
-        }
         if "monitoramento@integrabrasil.com".contains(&user.email) {
             println!("pulado monitoramento");
             continue;
         }
         println!("{}", tmp);
+
         let body: String = escrever_em_imagem::Assinatura::gerar_imagem_base64(user_final);
         let _ = send_email_smtp(&mailer, from, &user.email, subject, body).await;
-        // let _ = send_email_smtp(&mailer, from, "ti@integrabrasil.com", subject, body).await;
+        // let _ = send_email_smtp(&mailer, from, "ti@integrabrasil.com", "teste ", body).await;
     }
 
     Ok(())
@@ -80,11 +78,16 @@ async fn send_email_smtp(
         .subject(subject)
         .multipart(MultiPart::related().singlepart(anexo).singlepart(
             lettre::message::SinglePart::plain(
-                "Olá,  segue em anexo assinatura de email atualizada\n a anterior estava com o numero da integra errado, e resolução baixa".to_string(),
+                "Olá,  segue em anexo assinatura de email atualizada\n".to_string(),
             ),
-        ))?;
+        ))
+        .inspect_err(|err| {
+            dbg!(err);
+        })?;
 
-    mailer.send(email).await?;
+    mailer.send(email).await.inspect_err(|err| {
+        dbg!(err);
+    })?;
 
     Ok(())
 }

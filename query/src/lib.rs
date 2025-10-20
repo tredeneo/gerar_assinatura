@@ -8,6 +8,7 @@ pub const SELECT_USER: &str = r#"
 			join departments
 			on departments.id = users.department        
 			where users.id = ?1
+			and users.active = 1
 "#;
 pub const SELECT_USERS: &str = r#"
             SELECT users.name,login,email,departments.name as 'department',extension,phone_number,users.id
@@ -15,6 +16,7 @@ pub const SELECT_USERS: &str = r#"
 			join departments
 			on departments.id = users.department
             where users.name like ?1
+            and users.active = 1
             order by users.name
 "#;
 #[derive(Debug, FromRow, Clone)]

@@ -2,20 +2,18 @@ use std::{fs::File, path::Path};
 
 fn main() {
     let user = escrever_em_imagem::User::new(
-        "NOME DO FUNCIONARIO",
-        // "Rozilaine mlynarczuk",
+        // "NOME DO FUNCIONARIO",
+        "lucinéia soares",
         // "Wellington Diefenthaeler",
         // "wellington.Diefenthaeler@integrabrasil.com",
-        // "Kaylane   Diefenthaeler",
-        // "DENISIANA KAZIMIERCZAK"
-        // "Wellington Wellington"
-        "email@integrabrasil.com",
-        // "rozilaine.mlynarczuk@integrabrasil.com",
+        // "email@integrabrasil.com",
+        "saldo.frete@integrabrasil.com",
         // "comprovante.entrega@integrabrasil.com",
         "3084-8900",
-        "setor / departamento",
-        "numero corporativo",
-        "numero(se houver)",
+        // "setor / departamento",
+        "saldo",
+        "41988537502",
+        "", // "ramal(se houver)",
     );
     let mut config = dirs::config_local_dir().unwrap();
     config.push(Path::new("Temp"));
