@@ -83,23 +83,23 @@ async fn main() {
             escrever_em_imagem::Assinatura::gerar_imagem_downloads(teste);
         });
     });
-    let _ui = app.as_weak();
-    // app.on_outlook(move || {
-    //     let my_ui = ui.unwrap();
-    //     let _ = slint::spawn_local(async move {
-    //         let user = my_ui.global::<User>().get_actual_id();
-    //         let user = FromStr::from_str(user.as_str()).unwrap_or_default();
-    //         let data = pegar_dados_id(user).await;
-    //         let teste = escrever_em_imagem::User::new(
-    //             &data.name,
-    //             &data.email,
-    //             "41 3084-8900",
-    //             &data.department,
-    //             &data.phone_number,
-    //             &data.extension,
-    //         );
-    //         escrever_em_imagem::Assinatura::gerar_imagem_outlook(teste);
-    //     });
-    // });
+    let ui = app.as_weak();
+    app.on_outlook(move || {
+        let my_ui = ui.unwrap();
+        let _ = slint::spawn_local(async move {
+            let user = my_ui.global::<User>().get_actual_id();
+            let user = FromStr::from_str(user.as_str()).unwrap_or_default();
+            let data = pegar_dados_id(user).await;
+            let teste = escrever_em_imagem::User::new(
+                &data.name,
+                &data.email,
+                "41 3084-8900",
+                &data.department,
+                &data.phone_number,
+                &data.extension,
+            );
+            escrever_em_imagem::Assinatura::gerar_imagem_base64(teste);
+        });
+    });
     app.run().unwrap();
 }

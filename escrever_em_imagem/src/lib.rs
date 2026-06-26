@@ -5,7 +5,7 @@ use imageproc::drawing::draw_text;
 use regex::Regex;
 use std::fs;
 use std::fs::File;
-use std::io::Read;
+use std::io::{Read, Write};
 use std::ops::Not;
 use std::path::Path;
 
@@ -220,7 +220,7 @@ impl Assinatura {
         ass.diminuir_imagem(w, h);
         ass.escrever_nome(&user.name);
         ass.escrever_email(&user.email);
-        ass.escrever_setor(&user.setor);
+        ass.escrever_setor(&user.setor.trim());
         ass.escrever_telefone(&user.telefone, &user.ramal);
         ass.escrever_celular(&user.celular);
         ass.escrever_mensagem();
@@ -249,38 +249,38 @@ impl Assinatura {
         let mut buffer = Vec::new();
         let _ = File::read_to_end(&mut arquivo, &mut buffer).unwrap();
         let img_base64 = base64::engine::general_purpose::STANDARD.encode(buffer);
+        let html = maud::html! {
+            body{
+                div.container
+                {
+
+                    a href={"https://api.whatsapp.com/send?phone=55"(self.signature_number.replace(" ","").replace("-",""))};
+
+                    img src={"data:image/jpg;base64," (&img_base64)};
+                };
+                }
+        };
+        let html = html.into_string();
+
+        let mut file = match File::create(&path_html) {
+            Ok(file) => {
+                log::info!("arquivo criado");
+                log::debug!("{:?}", &path_html);
+                file
+            }
+            Err(err) => {
+                log::error!("Erro ao criar o arquivo: {}\n{}", err, &path_html.display());
+                return String::new();
+            }
+        };
+
+        match file.write(html.as_bytes()) {
+            Ok(_) => println!(
+                "HTML salvo com sucesso em {}",
+                path_html.to_str().unwrap_or_default()
+            ),
+            Err(err) => log::error!("Erro ao escrever o HTML no arquivo: {}", err),
+        }
         img_base64
-        // let html = maud::html! {
-        //     body{
-        //         // div.container
-        //         // {
-
-        //             a href={"https://api.whatsapp.com/send?phone=55"(self.signature_number.replace(" ","").replace("-",""))};
-
-        //             img src={"data:image/jpg;base64," (&img_base64)};
-        //         // };
-        //         }
-        // };
-        // let html = html.into_string();
-
-        // let mut file = match File::create(&path_html) {
-        //     Ok(file) => {
-        //         log::info!("arquivo criado");
-        //         log::debug!("{:?}", &path_html);
-        //         file
-        //     }
-        //     Err(err) => {
-        //         log::error!("Erro ao criar o arquivo: {}\n{}", err, &path_html.display());
-        //         return String::new();
-        //     }
-        // };
-
-        // match file.write_all(html.as_bytes()) {
-        //     Ok(_) => println!(
-        //         "HTML salvo com sucesso em {}",
-        //         path_html.to_str().unwrap_or_default()
-        //     ),
-        //     Err(err) => log::error!("Erro ao escrever o HTML no arquivo: {}", err),
-        // }
     }
 }
